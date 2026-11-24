@@ -13,7 +13,7 @@
   ];
   const sources=[
     ['The hackathon','FORCE’s original post and photographs','https://www.linkedin.com/feed/update/urn:li:activity:7530928332482232320/','Event programme','https://www.sodir.no/force/events/vibecode-hackathon/','Projects from the hackathon','https://github.com/frheg/hackathon-force'],
-    ['Nature’s Plug','Shale experiment and digitised model curve · Liu, Xie, Fjær, Bakheim and Stenebråten','https://doi.org/10.1007/s00603-025-04973-z','Licence for the adapted curve · CC BY 4.0','https://creativecommons.org/licenses/by/4.0/','Well 35/11-7 · Norwegian Offshore Directorate','https://factpages.sodir.no/en/wellbore/PageView/With/WellLogs/1979','Nature’s Plug · source code, data and screening method','https://github.com/jeham3408/natures-plug'],
+    ['Nature’s Plug','Explore the interactive well map','https://jeham3408.github.io/natures-plug/','Shale experiment and digitised model curve · Liu, Xie, Fjær, Bakheim and Stenebråten','https://doi.org/10.1007/s00603-025-04973-z','Licence for the adapted curve · CC BY 4.0','https://creativecommons.org/licenses/by/4.0/','Well 35/11-7 · Norwegian Offshore Directorate','https://factpages.sodir.no/en/wellbore/PageView/With/WellLogs/1979','Nature’s Plug · source code, data and screening method','https://github.com/jeham3408/natures-plug'],
     ['Reserve estimates','Data, field selection and method · Reserve Growth','https://github.com/jeham3408/reserve-growth','Early field estimates · Watkins, Table D-1','https://ceepr.mit.edu/wp-content/uploads/2023/02/2000-008.pdf#page=96'],
     ['Geosteering','The electromagnetic forward solver · empymod','https://empymod.emsig.xyz/en/stable/','Why a field attenuates in conductive rock · Electromagnetic Geophysics','https://em.geosci.xyz/content/maxwell1_fundamentals/harmonic_planewaves_homogeneous/skindepth.html','Ekofisk tool measurements · Dylan Loss and ConocoPhillips, NLOD 2.0','https://zenodo.org/records/24133398','Norwegian Licence for Open Government Data 2.0','https://data.norge.no/nlod/no/2.0']
   ];
@@ -37,7 +37,10 @@
     $('#kicker').textContent=scene.k;$('#title').replaceChildren(...scene.h.map(t=>{const el=document.createElement('span');el.textContent=t;return el}));
     $('#lead').textContent=scene.l;$('#detail').textContent=scene.d||'';
     $('#signature').replaceChildren();
-    const projectLinks={fram:['View the well map and source code ↗','https://github.com/jeham3408/natures-plug#natures-plug'],tartan:['Explore the Norwegian field analysis ↗','https://github.com/jeham3408/reserve-growth#what-we-found']};
+    const projectLinks={
+      leire:['Explore the Nature’s Plug well map ↗','https://jeham3408.github.io/natures-plug/'],
+      fram:['Open well 35/11-7 on the map ↗','https://jeham3408.github.io/natures-plug/#well=35/11-7'],
+      tartan:['Explore the Norwegian field analysis ↗','https://github.com/jeham3408/reserve-growth#what-we-found']};
     const project=projectLinks[scene.id],link=$('#projectLink');if(link){link.hidden=!project;if(project){link.textContent=project[0];link.href=project[1]}}
     if(scene.by){$('#signature').textContent='Fredric Hegland and Jesper Uhre Hammersvik';const sm=document.createElement('small');sm.textContent='19–20 November 2026';$('#signature').append(sm)}
     $('#start').hidden=index!==0;$('#hero').hidden=index!==0;$('#credits').hidden=index!==scenes.length-1;$('#embedded').hidden=!scene.url;if($('#loading'))$('#loading').hidden=!scene.url;$('#embedded').setAttribute('aria-busy',String(Boolean(scene.url)));
