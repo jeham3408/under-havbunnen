@@ -9,3 +9,5 @@ footer{height:62px;flex:none;border-top:1px solid var(--line);display:flex;align
 @media(max-width:410px){#signature small{display:block;margin:0}.footerlabel{display:none}.stage{min-height:465px}main{gap:13px;padding-top:16px}.word{font-size:14px}.modeltag{left:14px;top:14px}.cover .stage{min-height:330px}}
 @media(prefers-reduced-motion:no-preference){article.changed{animation:intro .24s ease-out}@keyframes intro{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:none}}}
 @media(max-width:365px){main{padding-top:12px;gap:12px}.stage{width:calc(100% + 16px);margin-left:-8px}h1,.cover h1{font-size:39px}#lead{font-size:15px}#detail{font-size:12px}.headtools button{padding-left:2px;padding-right:2px}.headtools{gap:7px}}
+
+#loading{position:absolute;inset:0;display:grid;place-items:center;background:#142322;color:#c8d8cb;letter-spacing:.01em;font-size:14px}
