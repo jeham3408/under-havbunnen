@@ -104,8 +104,8 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   window.addEventListener('message',e=>{
     if(e.source!==window.parent)return;
-    if(e.data?.type==='stage-view'&&['ekofisk','modell'].includes(e.data.view)){page(e.data.view==='ekofisk'?'field':'model');return;}
-    if(e.data?.type==='stage-active'){state.active=Boolean(e.data.active);if(!state.active)stop();}
+    if(e.data?.type==='stage-view'&&['ekofisk','modell','physics'].includes(e.data.view)){page(e.data.view==='ekofisk'?'field':e.data.view==='physics'?'physics':'model');return;}
+    if(e.data?.type==='stage-active'){state.active=Boolean(e.data.active);if(!state.active){stop();window.BorePhysics?.stop();}}
   });
   const ns='http://www.w3.org/2000/svg';
   function svg(tag,attrs,text){
@@ -144,20 +144,22 @@
     model:"The synthetic well slopes 2° below horizontal towards a flat boundary. The upper layer has a resistivity of 12 Ω·m and the lower layer 2 Ω·m. The cutaway exaggerates height tenfold. The tool is enlarged and the block width is illustrative. Drag or use the arrow keys to rotate the view.\n\nA Maxwell model generates phase and attenuation readings at 400 kHz and 2 MHz. We add noise to these readings. At each station the browser compares the current reading and up to four earlier stations with a library of simulated responses. Switch frequencies to see what each one can resolve.\n\nWith both frequencies, the model reported a distance at 39 of 113 stations. At 36 of those 39, the known distance fell within the model’s 90% interval (5th to 95th percentiles). We used the same idealised layer geometry to generate and interpret the signals.\n\nThe known distance is measured vertically from the transmitter to the boundary. “Below” and “above” describe the boundary relative to the transmitter.",
     field:"In Ekofisk well 2/4-Z-26, we withheld four 32-inch channels. The physics model used eight other channels at the same measured depth. This example shows the apparent resistivity reported by the 2 MHz phase channel.\n\nThe neighbour estimate is the geometric mean of the measured 16- and 48-inch channels. The physics model gave 6.70 Ω·m, the neighbours gave 6.36 Ω·m and the withheld channel measured 6.34 Ω·m. None of the four model grids resolved the distance to the bed boundary at this station.\n\nData from Dylan Loss and ConocoPhillips, Ekofisk measurement-while-drilling dataset, Zenodo record 24133398 (NLOD 2.0)."
   };
+  function route(){const mode=location.hash.slice(1)||new URLSearchParams(location.search).get('mode');return mode==='physics'?'physics':mode==='ekofisk'?'field':'model';}
   function page(which,changeHash=false){
-    if(which!=='field')which='model';state.page=which;stop();
-    $('model').hidden=which!=='model';$('field').hidden=which!=='field';$('to-model').setAttribute('aria-pressed',which==='model');$('to-field').setAttribute('aria-pressed',which==='field');
-    if(changeHash){try{history.replaceState(null,'',which==='field'?'#ekofisk':'#modell');}catch{}}
-    resize();if(which==='model')update();else drawPlot();
+    if(!['field','physics'].includes(which))which='model';state.page=which;stop();window.BorePhysics?.stop();
+    for(const view of ['model','field','physics']){ $(view).hidden=which!==view;$('to-'+view).setAttribute('aria-pressed',which===view);}
+    const info=$('info');info.classList.toggle('em-equations',which==='physics');info.textContent=which==='physics'?'Equations':'i';info.title=which==='physics'?'Equations and method':'About the method';info.setAttribute('aria-label',info.title);$('notes').querySelector('h2').textContent=which==='physics'?'Equations and method':'How it works';
+    if(changeHash){try{history.replaceState(null,'',which==='field'?'#ekofisk':which==='physics'?'#physics':'#modell');}catch{}}
+    resize();if(which==='model')update();else if(which==='field')drawPlot();else window.BorePhysics?.redraw();
   }
-  $('to-model').onclick=()=>page('model',true);$('to-field').onclick=()=>page('field',true);
-  window.addEventListener('hashchange',()=>page(location.hash==='#ekofisk'?'field':'model'));
-  $('info').onclick=()=>{stop();$('method-copy').replaceChildren(...method[state.page].split('\n\n').map(t=>{const p=document.createElement('p');p.textContent=t;return p;}));$('notes').showModal();};$('close').onclick=()=>$('notes').close();
+  for(const view of ['model','field','physics'])$('to-'+view).onclick=()=>page(view,true);
+  window.addEventListener('hashchange',()=>page(route()));
+  $('info').onclick=()=>{stop();window.BorePhysics?.stop();if(state.page==='physics')window.BorePhysics.notes($('method-copy'));else $('method-copy').replaceChildren(...method[state.page].split('\n\n').map(t=>{const p=document.createElement('p');p.textContent=t;return p;}));$('notes').showModal();};$('close').onclick=()=>$('notes').close();
   $('notes').onclick=e=>{if(e.target===$('notes'))$('notes').close();};
   software=createSectionRenderer(canvas,project,pts,spatial,state,source);
   new ResizeObserver(resize).observe($('stage'));new ResizeObserver(resize).observe(volume);
-  window.BoreStage={pts,spatial,az,source,state,project,focus,register(renderer){enhanced=renderer;canvas.dataset.renderer='webgl';redraw();},fallback(){enhanced=null;canvas.dataset.renderer='canvas';redraw();}};
-  canvas.dataset.renderer='canvas';page(location.hash==='#ekofisk'?'field':'model');
+  window.BoreStage={pts,spatial,az,source,state,library:lib,project,focus,register(renderer){enhanced=renderer;canvas.dataset.renderer='webgl';redraw();},fallback(){enhanced=null;canvas.dataset.renderer='canvas';redraw();}};
+  canvas.dataset.renderer='canvas';page(route());
 })();
 
 // Orthographic software renderer uses the same station positions and camera as WebGL.

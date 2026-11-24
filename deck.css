@@ -14,3 +14,18 @@ footer{height:62px;flex:none;border-top:1px solid var(--line);display:flex;align
 
 #projectLink{display:inline-block;margin-top:12px;font-weight:560;font-size:12px;text-decoration-color:#638b80}
 @media(max-width:850px){#projectLink{margin-top:7px}}
+
+#trace-toggle{position:absolute;right:15px;top:13px;z-index:2;min-height:36px;border:1px solid #628177;border-radius:5px;background:#142320ed;font-size:12px;font-weight:550;padding:6px 10px}
+#trace-toggle[aria-pressed="true"]{background:#d3e9d9;color:#192722}
+#trace-panel{position:absolute;inset:58px 6% 90px;display:flex;flex-direction:column}
+#trace-panel h2{font:700 clamp(20px,2.5vw,33px)/1.04 Barlow,sans-serif;margin:0}
+#trace-panel p{margin:5px 0 7px;font-size:clamp(12px,1.3vw,15px);line-height:1.35;color:#cad3c9;max-width:62ch}
+#centre-trace{display:block;flex:1;width:100%;min-height:112px}
+#trace-reading{font-size:12px;color:#aee0d4;font-variant-numeric:tabular-nums}
+@media(max-width:540px){#trace-panel{inset:47px 5% 73px}#trace-panel p{margin:3px 0;font-size:11px}#trace-toggle{right:9px;top:7px;font-size:11px;min-height:31px}#trace-panel h2{font-size:19px}#trace-reading{font-size:11px}}
+@media(max-width:540px){
+  .modeltag{font-size:9px;letter-spacing:.065em;gap:5px;left:11px;max-width:calc(100% - 136px)}
+  .cover .stage:has(#trace-toggle[aria-pressed="true"]){min-height:365px}
+  #trace-panel{bottom:105px}
+  #centre-trace{min-height:95px}
+}

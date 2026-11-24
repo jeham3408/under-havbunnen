@@ -89,10 +89,72 @@
       ctx.fillStyle='#13231fe8';ctx.fillRect(px,ay-9,tw+10,size+8);ctx.fillStyle='#fae5bf';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(word,px+5,ay-4+(size+3)/2);ctx.textBaseline='alphabetic';
     }
   }
+  const traceToggle = document.querySelector('#trace-toggle');
+  const tracePanel = document.querySelector('#trace-panel');
+  const traceGraph = document.querySelector('#centre-trace');
+  const traceReading = document.querySelector('#trace-reading');
+  const sliceHelp = document.querySelector('#slice-help');
+  const centre = Math.round((n - 1) / 2);
+  const firstHorizon = (centre * n + centre) * reflectivity.length;
+  const traceSamples = Array.from({length:231}, (_, i) => amplitude(0.5, 0.5, 80 + i));
+  let traceSize = '';
+  function svgMark(tag, attributes, label) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [key, value] of Object.entries(attributes)) el.setAttribute(key, value);
+    if (label !== undefined) el.textContent = label;
+    traceGraph.append(el);
+    return el;
+  }
+  function drawTrace() {
+    if (tracePanel.hidden || document.querySelector('#hero').hidden) return;
+    const width = Math.round(traceGraph.clientWidth), height = Math.round(traceGraph.clientHeight);
+    if (!width || !height) return;
+    const left = 9, right = width - 10, tickY = height - 4;
+    const tx = timeMs => left + (timeMs - 80) / 230 * (right - left);
+    const baseline1 = height * .30, baseline2 = height * .69;
+    const scale1 = height * .56, scale2 = height * .60;
+    if (traceSize !== width + 'x' + height) {
+      traceSize = width + 'x' + height;
+      traceGraph.setAttribute('viewBox','0 0 '+width+' '+height);
+      traceGraph.replaceChildren();
+      const label = (x,y,str,color) => svgMark('text',{x,y,fill:color,'font-size':11,'font-family':'Inter,Arial,sans-serif'},str);
+      label(left,11,'Reflection coefficient','#efc890');
+      label(left,baseline1+(baseline2-baseline1)*.49,'Synthetic trace · relative amplitude','#93d6c9');
+      for (const baseline of [baseline1,baseline2]) svgMark('path',{d:'M '+left+' '+baseline+' H '+right,stroke:'#697f75','stroke-width':1});
+      reflectivity.forEach((coefficient,k)=>{
+        const timeMs = horizons[firstHorizon + k];
+        if (timeMs < 80 || timeMs > 310) return;
+        const x = tx(timeMs);
+        svgMark('path',{d:'M '+x+' '+baseline1+' v '+(-coefficient*scale1),stroke:'#efc890','stroke-width':2.8});
+      });
+      svgMark('path',{d:traceSamples.map((v,i)=>(i?'L':'M')+tx(80+i).toFixed(2)+' '+(baseline2-v*scale2).toFixed(2)).join(' '),fill:'none',stroke:'#8cdbc8','stroke-width':1.9});
+      [80,140,200,260,310].forEach(ms=>{
+        const el=label(tx(ms),tickY,String(ms)+(ms===310?' ms':''),'#b5c7ba');
+        el.setAttribute('text-anchor',ms===80?'start':ms===310?'end':'middle');
+      });
+      svgMark('line',{id:'sample-cursor',stroke:'#ebedd7','stroke-opacity':.68,'stroke-dasharray':'3 4',y1:15,y2:height-18});
+      svgMark('circle',{id:'sample-marker',r:3.6,fill:'#eff4df',stroke:'#22332e'});
+    }
+    const sample = traceSamples[time-80];
+    const cursor = traceGraph.querySelector('#sample-cursor'), marker = traceGraph.querySelector('#sample-marker');
+    cursor.setAttribute('x1',tx(time)); cursor.setAttribute('x2',tx(time));
+    marker.setAttribute('cx',tx(time)); marker.setAttribute('cy',baseline2-sample*scale2);
+    traceReading.textContent = 'At '+time+' ms · relative amplitude '+(sample>=0?'+':'')+sample.toFixed(3);
+  }
+  traceToggle.addEventListener('click',()=>{
+    const open = tracePanel.hidden;
+    tracePanel.hidden = !open;
+    canvas.hidden = open;
+    traceToggle.setAttribute('aria-pressed',String(open));
+    traceToggle.textContent = open?'Show 3D block':'Show seismic trace';
+    sliceHelp.textContent = open?'Move the slider to sample the trace at a different time.':'Move the slider to slice through the layers. Drag the block to rotate.';
+    if(open) drawTrace(); else size();
+  });
+  new ResizeObserver(drawTrace).observe(traceGraph);
   function refresh(){
     time=+slider.value;table.value=time+' ms';table.textContent=table.value;
     slider.setAttribute('aria-valuetext',time+' milliseconds two-way travel time');
-    topTexture=texture(n,n,(u,v)=>amplitude(u,v,time));paint();
+    topTexture=texture(n,n,(u,v)=>amplitude(u,v,time));paint();drawTrace();
   }
   let update=0;slider.addEventListener('input',()=>{cancelAnimationFrame(update);update=requestAnimationFrame(refresh)});
   const size=()=>{const box=canvas.getBoundingClientRect();if(!box.width||!box.height)return;const d=Math.min(2,devicePixelRatio||1);w=box.width;h=box.height;canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);paint()};

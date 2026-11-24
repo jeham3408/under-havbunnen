@@ -56,7 +56,7 @@ function initialiseReserve() {
     const topMargin=compact ? Math.min(106,height*.29) : 12;
     const usableHeight=Math.max(45,height-topMargin-32);
     const s=Math.min(width*(compact ? .30 : .254),usableHeight/(bottomEdge-topEdge));
-    const cx=width*(compact ? .495 : .58);
+    const cx=width*(compact ? .525 : .58);
     const cy=topMargin+(usableHeight-s*(bottomEdge-topEdge))*.5-s*topEdge;
     function pt(x,y,z) {
       return [cx+s*(x*ca-y*sa),cy+s*((x*sa+y*ca)*se-z*ce)];
@@ -147,17 +147,116 @@ function initialiseReserve() {
     ctx.fillStyle='#ffdda8';ctx.fillText(label,lx,mid+4);
     ctx.lineCap='butt';
   }
+  const modelAssumptions = {
+    areaKm2: 20, netToGross: 0.65, oilSaturation: 0.75, formationVolumeFactor: 1.25,
+    barrelsPerStandardM3: 6.2898
+  };
+  const stageDefinitions = [
+    {key: 'gross', name: 'Gross rock', colour: '#98a99b'},
+    {key: 'net', name: 'Net reservoir rock', colour: '#a9ba9b'},
+    {key: 'pores', name: 'Pore space', short: 'Pore space', colour: '#79c6c0'},
+    {key: 'oil', name: 'Oil in the pores', short: 'Oil at depth', colour: '#e4af72'},
+    {key: 'stock', name: 'Oil in place', colour: '#e2a866'},
+    {key: 'recovered', name: 'Recoverable oil', short: 'Recoverable', colour: '#eed19b'}
+  ];
+  const detailedNumber = new Intl.NumberFormat('en-GB', {maximumFractionDigits: 7});
+  let selectedStep = 0, tracing = false, budget;
+  const traceRows = [], traceShortcuts = [];
+  const barMaximum = modelAssumptions.areaKm2 * Number(sliders.h.max);
+
+  function calculateVolumes(h, p, recovery) {
+    const constants = modelAssumptions;
+    // km² × m is already in millions of cubic metres. Convert to stock-tank volume before barrels.
+    const gross = constants.areaKm2 * h;
+    const net = gross * constants.netToGross;
+    const pores = net * p;
+    const oil = pores * constants.oilSaturation;
+    const stock = oil / constants.formationVolumeFactor;
+    const recovered = stock * recovery;
+    return {h, p, recovery, gross, net, pores, oil, stock, recovered,
+      stockBarrels: stock * constants.barrelsPerStandardM3,
+      recoveredBarrels: recovered * constants.barrelsPerStandardM3};
+  }
+  function updateTrace() {
+    const v = budget, c = modelAssumptions, n = value => detailedNumber.format(value);
+    const computations = [
+      [n(c.areaKm2)+' km² × '+n(v.h)+' m = '+n(v.gross)+' million m³',
+       'The mapped area and gross thickness give the volume of the whole rock layer.'],
+      [n(v.gross)+' × '+n(c.netToGross)+' = '+n(v.net)+' million m³',
+       'The net-to-gross ratio counts '+format(c.netToGross*100)+'% of the gross rock as reservoir rock.'],
+      [n(v.net)+' × '+n(v.p)+' = '+n(v.pores)+' million m³',
+       'At '+format(v.p*100)+'% porosity, this much of the net reservoir is pore space. Solid grains occupy the rest.'],
+      [n(v.pores)+' × '+n(c.oilSaturation)+' = '+n(v.oil)+' million m³',
+       'Oil fills '+format(c.oilSaturation*100)+'% of the pores at depth. Water fills the remaining '+format((1-c.oilSaturation)*100)+'% in this example.'],
+      [n(v.oil)+' ÷ '+n(c.formationVolumeFactor)+' = '+n(v.stock)+' million standard m³',
+       'Gas separates at the surface. Each standard m³ of stock-tank oil occupied '+n(c.formationVolumeFactor)+' m³ at reservoir conditions.'],
+      [n(v.stock)+' × '+n(v.recovery)+' = '+n(v.recovered)+' million standard m³',
+       'The recovery factor is '+format(v.recovery*100)+'%. At '+n(c.barrelsPerStandardM3)+' barrels per standard m³, this yields '+format(v.recoveredBarrels)+' million barrels.']
+    ];
+    stageDefinitions.forEach((d, i) => {
+      const value = v[d.key], text = format(value, 2), chosen = selectedStep === i;
+      const {button, number, fill} = traceRows[i];
+      number.textContent = text;
+      fill.style.width = value / barMaximum * 100 + '%';
+      button.setAttribute('aria-pressed', String(chosen));
+      button.setAttribute('aria-label', d.name+', '+text+(i < 4 ? ' million reservoir cubic metres' : ' million standard cubic metres')+'. Show calculation');
+      const shortcut = traceShortcuts[i];
+      if (shortcut) {
+        shortcut.number.textContent = text;
+        shortcut.button.setAttribute('aria-label', 'Trace '+d.name.toLowerCase()+', '+text+(i < 4 ? ' million reservoir cubic metres' : ' million standard cubic metres'));
+      }
+    });
+    $('trace-equation').textContent = computations[selectedStep][0];
+    $('trace-explanation').textContent = computations[selectedStep][1];
+  }
+  function showTrace(step, focusStep) {
+    selectedStep = step; tracing = true;
+    $('model-stage').hidden = true;
+    $('trace-launch').hidden = true;
+    $('volume-trace').hidden = false;
+    updateTrace();
+    if (focusStep) traceRows[step].button.focus({preventScroll:true});
+  }
+  const traceLinks = document.querySelector('.trace-links');
+  stageDefinitions.forEach((d, i) => {
+    const button = document.createElement('button');
+    button.type='button';button.className='trace-row';button.dataset.step=d.key;
+    button.style.setProperty('--stage-colour', d.colour);
+    const name = document.createElement('span'); name.className='trace-name';name.textContent=d.name;
+    const track = document.createElement('span');track.className='trace-track';track.setAttribute('aria-hidden','true');
+    const fill=document.createElement('i');track.append(fill);
+    const number=document.createElement('span');number.className='trace-number';
+    button.append(name,track,number);
+    button.addEventListener('click',()=>{selectedStep=i;updateTrace()});
+    $(i<4?'reservoir-rows':'surface-rows').append(button);
+    traceRows[i]={button,number,fill};
+    if ([0,2,3,5].includes(i)) {
+      const shortcut = document.createElement('button');
+      shortcut.type='button';shortcut.className='trace-shortcut';shortcut.dataset.step=d.key;
+      shortcut.style.setProperty('--stage-colour',d.colour);
+      const label=document.createElement('span');label.textContent=d.short || d.name;
+      const value=document.createElement('b');shortcut.append(label,value);
+      shortcut.addEventListener('click',()=>showTrace(i,true));traceLinks.append(shortcut);
+      traceShortcuts[i]={button:shortcut,number:value};
+    }
+  });
+  $('back-to-block').addEventListener('click',()=>{
+    tracing=false;$('volume-trace').hidden=true;$('trace-launch').hidden=false;
+    $('model-stage').hidden=false;rescaleCanvas();
+    (traceShortcuts[selectedStep] || traceShortcuts[0]).button.focus({preventScroll:true});
+  });
   function updateModel() {
     const h=Number(sliders.h.value),p=Number(sliders.p.value)/100,r=Number(sliders.r.value)/100;
-    const stock=20*h*.65*p*.75/1.25*6.2898;
+    budget=calculateVolumes(h,p,r);
     $('thick-out').value=format(h)+' m';$('poro-out').value=format(p*100)+'%';$('recovery-out').value=format(r*100)+'%';
-    $('volume').textContent=format(stock*r);
-    $('in-place').textContent='Of '+format(stock)+' million barrels in place';
+    $('volume').textContent=format(budget.recoveredBarrels);
+    $('in-place').textContent='Of '+format(budget.stockBarrels)+' million barrels in place';
     $('share-fill').style.width=r*100+'%';
     sliders.h.setAttribute('aria-valuetext',format(h)+' metres');
     sliders.p.setAttribute('aria-valuetext',format(p*100)+' per cent');
     sliders.r.setAttribute('aria-valuetext',format(r*100)+' per cent');
-    requestRedraw();
+    updateTrace();
+    if (!tracing) requestRedraw();
   }
   canvas.addEventListener('pointerdown',e=>{
     if(e.button!==0 && e.pointerType==='mouse')return;
@@ -406,7 +505,9 @@ function initialiseReserve() {
   }
   updateModel();
   selectField('Tartan');
-  setMode(location.hash.toLowerCase() === '#tartan' ? 'field' : 'model');
+  const entry = location.hash.toLowerCase();
+  setMode(entry === '#tartan' ? 'field' : 'model');
+  if (entry === '#volumes') showTrace(4, false);
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialiseReserve, {once: true});

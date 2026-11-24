@@ -1,6 +1,6 @@
 (() => {
  if(window.parent===window)return;
- const dest={'tab-lab':'leire','tab-field':'fram','model-tab':'reserveanslag','field-tab':'tartan','to-model':'geostyring','to-field':'ekofisk'};
+ const dest={'tab-lab':'leire','tab-field':'fram','model-tab':'reserveanslag','field-tab':'tartan','to-model':'geostyring','to-field':'ekofisk','to-physics':'maxwell'};
  const send=o=>parent.postMessage(o,'*');
  document.addEventListener('click',event=>{const id=event.target.closest('button')?.id;if(dest[id])send({type:'deck-scene',id:dest[id]})});
  const local='input,select,textarea,[contenteditable=true],[role=tab],canvas,[role=slider]';

@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>Nature’s Plug · Lab sample and Fram well</title><link rel="stylesheet" href="leire.css?v=080f9633b8"><script src="data.js?v=388d36f9ac" defer></script><script src="vis.js?v=9db4c73913" defer></script></head>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>Nature’s Plug · Lab sample and Fram well</title><link rel="stylesheet" href="leire.css?v=ad620e593d"><script src="data.js?v=4a986310a6" defer></script><script src="vis.js?v=74800c9d4e" defer></script></head>
 <body><main class="module" aria-label="Nature’s Plug. Explore the lab sample and the Fram well.">
-<header class="tools"><div class="tabs" role="group" aria-label="Select a view"><button type="button" id="tab-lab" aria-pressed="true">Lab sample</button><button type="button" id="tab-field" aria-pressed="false">Fram well</button></div><button type="button" class="info" aria-expanded="false" aria-controls="notes" title="About the data and methods">Methods <span aria-hidden="true">↗</span></button></header>
+<header class="tools"><div class="tabs" role="group" aria-label="Select a view"><button type="button" id="tab-lab" aria-pressed="true">Lab sample</button><button type="button" id="tab-field" aria-pressed="false">Fram well</button></div><div class="extra-tools"><button type="button" id="physics-open" aria-haspopup="dialog" aria-controls="phys-panel">Physics</button><button type="button" class="info" aria-expanded="false" aria-controls="notes" title="About the data and methods">Methods <span aria-hidden="true">↗</span></button></div></header>
 <aside id="notes" role="dialog" aria-modal="false" hidden tabindex="-1" aria-labelledby="note-title"><div class="note-head"><strong id="note-title"></strong><button type="button" id="close-notes" aria-label="Close the methods">×</button></div><p id="note-copy"></p>
  <section id="hold-study" aria-labelledby="hold-title"><h3 id="hold-title">After the shale touches the pipe</h3><p>Fluid still flowed after contact. When the researchers held the pressure constant, permeability gradually fell. At the same pressure difference, a lower value means less fluid gets through.</p>
  <div class="hold-readout"><label for="hold-time">Time at constant pressure</label><output id="hold-day" for="hold-time">0.0 days</output></div>
@@ -19,4 +19,28 @@
  <div class="runner"><button type="button" id="run" aria-label="Play the lab simulation" title="Play"><span class="play-icon"></span></button><label for="sweep" class="sr">Time in the laboratory model</label><input id="sweep" type="range" min="17" max="31" step=".1" value="19"><span class="limit" id="end-label">31 days</span></div>
  <p class="caption" id="caption">The shale moves towards the aluminium pipe. Bore diameter 10 mm, pipe diameter 8 mm.</p>
 </footer>
-</main><script defer src="../bridge.js"></script></body></html>
+<dialog id="phys-panel" aria-labelledby="phys-heading">
+ <header class="phys-head"><div><span id="phys-kicker"></span><h2 id="phys-heading"></h2></div><button type="button" id="phys-close" aria-label="Close physics view">Close ×</button></header>
+ <div class="phys-body">
+   <section id="phys-lab">
+     <p class="phys-intro">The shale has touched the pipe. How much flow can still pass as the pressure is held constant?</p>
+     <div class="phys-legend"><span><i class="measure"></i>Lab readings</span><span><i class="fit"></i>Fitted permeability</span></div>
+     <svg id="lab-graph" role="img" aria-label="Annular permeability in microdarcies against time at constant pressure, with 24 approximate laboratory measurements and the authors’ fitted curve"></svg>
+     <div id="hold-slot"></div>
+     <div class="phys-results"><div><span id="point-label">Nearest lab reading</span><strong id="point-read"></strong></div><div><span>Flow relative to day zero</span><strong id="flux-ratio"></strong></div></div>
+     <p class="phys-explain" id="flux-copy"></p>
+     <details><summary>Equation, measurements and limits</summary><p>The 24 points are approximate readings digitised from figure 10b. The line is the authors’ fit to this experiment. Day zero is the start of the pressure hold.</p><p class="equation">k(t) = 38 + 480 / (1 + t / 20.4)</p><p>Here <em>t</em> is in days and <em>k</em> in µD. For the same fluid viscosity and pressure gradient, Darcy’s law gives <em>q(t) / q(0) = k(t) / k(0)</em>. The chart gives a relative flux under those assumptions. A well leak rate needs its flow path, pressure gradient and fluid properties.</p><a href="https://doi.org/10.1007/s00603-025-04973-z" target="_blank" rel="noopener noreferrer">Liu et al., figure 10b and equation 18 ↗</a></details>
+   </section>
+   <section id="phys-field" hidden>
+     <p class="phys-intro">Move along the archived well. The atlas compares pressure from the reservoir with a formation limit estimated from leak-off tests.</p>
+     <div class="phys-legend"><span><i class="fit"></i>Reservoir demand</span><span><i class="limit-line"></i>Leak-off proxy</span></div>
+     <svg id="field-graph" role="img" aria-label="Pressure in megapascals from the reservoir compared with a formation leak-off pressure proxy over the depth interval"></svg>
+     <div class="depth-control"><label for="phys-depth">Depth below rig datum</label><output for="phys-depth" id="depth-val"></output></div>
+     <input type="range" id="phys-depth" min="0" max="299" step="1" value="165">
+     <div class="phys-results field-results"><div><span>Demand</span><strong id="required"></strong></div><div><span>Proxy</span><strong id="capacity"></strong></div><div><span>Margin</span><strong id="margin"></strong></div></div>
+     <p class="phys-explain" id="margin-copy"></p>
+     <details><summary>Pressure calculation and limits</summary><p>This vertical interval uses true vertical depth below the rig datum. The atlas estimates reservoir pressure at 1,795.9 m from an equivalent density of 1.179 g/cm³, after subtracting 0.050 from the recorded mud weight of 1.229 g/cm³. The assumed gas density is 0.200 g/cm³.</p><p class="equation">P<sub>required</sub> = ρ<sub>reservoir-equivalent</sub> g z<sub>reservoir</sub> − ρ<sub>gas</sub> g (z<sub>reservoir</sub> − z)</p><p class="equation">P<sub>proxy</sub> = ρ<sub>test-equivalent</sub> g z</p><p>Both tests at 954 and 1,774 m gave an equivalent density of 1.770 g/cm³. Using kg/m³, metres and g = 9.80665 m/s² gives pressure in pascals. A positive margin meets this pressure criterion alone. Pipe contact and hydraulic sealing require separate well evidence.</p><a href="https://github.com/jeham3408/natures-plug#how-the-screen-works" target="_blank" rel="noopener noreferrer">Atlas screening method ↗</a></details>
+   </section>
+ </div>
+</dialog>
+</main><script defer src="physics.js?v=62167e4d9b"></script><script defer src="../bridge.js?v=dfca4fa114"></script></body></html>

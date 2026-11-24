@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reserve Growth · reservoir volume and field history</title>
-<link rel="stylesheet" href="scene.css?v=c45118a989">
+<link rel="stylesheet" href="scene.css?v=5cd0a67a04">
 <script defer src="feltdata.js?v=4afde22c53"></script>
-<script defer src="reservar.js?v=85d623fb71"></script>
+<script defer src="reservar.js?v=d1f717ad61"></script>
 </head>
 <body>
 <main>
@@ -24,6 +24,17 @@
   <div class="stage-note" id="geometry-note">Hypothetical reservoir · height exaggerated</div>
   <button id="rotate" class="tool" type="button" title="Rotate the model" aria-label="Rotate the model 30 degrees"><span aria-hidden="true">⟳</span> Rotate</button>
  </div>
+ <div id="volume-trace" class="stage trace-stage" hidden>
+  <div class="trace-title"><div><h2>From rock to stock tank</h2><p>Choose a step to see its calculation.</p></div><button id="back-to-block" type="button" class="trace-back">3D block ↗</button></div>
+  <div class="trace-chart" role="group" aria-label="Volume calculation steps">
+   <div class="trace-basis"><span>At reservoir conditions</span><span>million m³</span></div>
+   <div id="reservoir-rows"></div>
+   <div class="trace-basis surface"><span>At stock-tank conditions</span><span>million standard m³</span></div>
+   <div id="surface-rows"></div>
+  </div>
+  <div class="trace-detail" aria-live="polite" aria-atomic="true"><strong id="trace-equation"></strong><p id="trace-explanation"></p></div>
+ </div>
+ <div class="trace-launch" id="trace-launch"><div class="trace-launch-heading"><strong>Trace the volume</strong><span>million m³ · recovery at surface</span></div><div class="trace-links" role="group" aria-label="Open the volume calculation"></div></div>
  <div class="controls" aria-label="Adjust the reservoir assumptions">
   <label class="slider" title="Gross thickness of the reservoir layer"><span>Thickness <output id="thick-out" for="thickness">20 m</output></span><input id="thickness" type="range" min="15" max="25" value="20" step="0.5"></label>
   <label class="slider" title="The fraction of the rock volume occupied by pores"><span>Porosity <output id="poro-out" for="porosity">20%</output></span><input id="porosity" type="range" min="16" max="24" value="20" step="0.5"></label>
@@ -54,17 +65,19 @@
 <dialog id="method" aria-label="Methods and sources">
  <div class="dialog-title"><strong>Methods and sources</strong><button type="button" id="close-method" class="source-button" aria-label="Close methods and sources">✕</button></div>
  <div id="model-method">
-  <p>The model estimates how much oil could be recovered from a hypothetical field. Porosity is the fraction of the rock volume made up of pores. Oil saturation is the fraction of that pore space filled with oil. The recovery factor sets how much of that oil can be produced.</p>
-  <div class="formula">Area × gross thickness × net-to-gross ratio × porosity × oil saturation × recovery factor ÷ formation volume factor</div>
-  <p>We fix the area at 20 km², net-to-gross ratio at 65%, oil saturation at 75%, and oil formation volume factor at 1.25 reservoir m³ per standard m³. One standard cubic metre of oil is 6.2898 barrels. The gold layer marks the reservoir. Each combination of assumptions gives one possible outcome.</p>
+  <p>Our hackathon project followed changes in published Norwegian field estimates and checked early UK estimates against production. This separate, hypothetical example lets you see how an assumption changes a volumetric estimate.</p>
+  <div class="formula">Recoverable stock-tank oil = area × gross thickness × net-to-gross ratio × porosity × oil saturation ÷ oil formation volume factor × recovery factor.</div>
+  <p>The fixed assumptions are a 20 km² mapped area, 65% net reservoir rock, 75% initial oil saturation and a formation volume factor of 1.25 reservoir m³ per standard m³. One standard cubic metre of oil is 6.2898 barrels. The coloured layer has exaggerated height.</p>
+  <p>The calculation uses one average value per property across the field. Recovery is an assumption. Estimating it for a real field requires information about fluid flow, wells and production history. Each slider setting gives one illustrative result. The bars share a linear scale from zero to 500 million m³, with the reference conditions labelled above each group.</p>
+  <p class="source-links"><a href="https://pubs.usgs.gov/sir/2019/5115/sir20195115.pdf" target="_blank" rel="noopener">USGS, volumetric oil-in-place equation (Appendix 3)</a><a href="https://courses.ems.psu.edu/png520/print/m18_p7.html" target="_blank" rel="noopener">Penn State, reservoir and stock-tank volume</a><a href="https://github.com/jeham3408/reserve-growth#what-we-found" target="_blank" rel="noopener">Reserve Growth, hackathon analysis and data</a></p>
  </div>
  <div id="field-method" hidden>
-  <p>The curve adds up reported oil production through the selected year, using data from the UK North Sea Transition Authority. The dashed line is an early estimate of how much oil the field could produce over its lifetime.</p>
+  <p>The hackathon analysis followed published Norwegian field estimates over time and used UK fields as a cross-check. Here the curve adds up reported oil production through the selected year, using data from the UK North Sea Transition Authority. The dashed line is an early estimate of how much oil the field could produce over its lifetime.</p>
   <p id="field-source"></p>
   <p>The sample covers 35 UK oil fields that have stopped producing and have both an early estimate and production records covering their operating lives. Watkins supplied 26 estimates and the DTI Brown Book supplied nine. Each field retains the units of its original estimate. The 2026 records run through August.</p>
   <p class="source-links"><a id="watkins-link" href="https://ceepr.mit.edu/wp-content/uploads/2023/02/2000-008.pdf#page=93" target="_blank" rel="noopener">Watkins (2000), Table D-1</a><a href="https://services-eu1.arcgis.com/OZMfUznmLTnWccBc/arcgis/rest/services/UKCS_hydrocarbon_field_production_reports_PPRS_points_(WGS84)/FeatureServer/0" target="_blank" rel="noopener">North Sea Transition Authority, PPRS</a><a id="brownbook-link" href="https://web.archive.org/web/20030430104345/http://www.dbd-data.co.uk/bb1998/index.htm" target="_blank" rel="noopener">DTI Brown Book, archive</a></p>
  </div>
 </dialog>
 </main>
-<script defer src="../bridge.js"></script></body>
+<script defer src="../bridge.js?v=dfca4fa114"></script></body>
 </html>

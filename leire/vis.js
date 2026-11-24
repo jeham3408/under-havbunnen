@@ -46,6 +46,7 @@
   }
   const holdTime=$('#hold-time');
   function permeability(t){return 38+(518-38)/(1+t/20.4);}
+  window.clayLabPhysics={permeability};
   function holdPoint(t){return [3+294*t/50,38-(permeability(t)/525)*35];}
   const holdPath=Array.from({length:101},(_,i)=>holdPoint(i/2).map(x=>x.toFixed(2)).join(' ')).join(' L');
   $('#hold-line').setAttribute('d','M'+holdPath);
