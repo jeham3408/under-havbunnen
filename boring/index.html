@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nn">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>Geostyring · modellbrønn og Ekofisk</title><link rel="stylesheet" href="scene.css">
+<script defer src="data.js"></script><script defer src="engine.js"></script><script defer src="scene.js"></script><script type="module" src="volume.js"></script></head>
+<body>
+<main id="stage">
+<header class="top">
+  <div class="switch" role="group" aria-label="Datagrunnlag"><button type="button" id="to-model" aria-pressed="true">Modellbrønn</button><button type="button" id="to-field" aria-pressed="false">Ekofisk</button></div>
+  <button id="info" type="button" aria-label="Om metoden" title="Om metoden">i</button>
+</header>
+<section id="model" aria-label="Syntetisk elektromagnetisk geostyring">
+  <div class="volume" id="volume"><canvas id="bore-canvas" tabindex="0" role="img" aria-label="Roterbart snitt av to berglag og sonden. Piltastane dreier modellen."></canvas>
+    <svg id="leaders" aria-hidden="true"><g id="leader-bed"><path/><circle r="2.1"/><text>Laggrense</text></g><g id="leader-tx"><path/><circle r="2.1"/><text>Sendar</text></g></svg>
+    <span id="layer-upper" class="callout">12 Ω·m</span><span id="layer-lower" class="callout">2 Ω·m</span>
+    <div class="ruler" aria-hidden="true"><span id="ruler-value">50 m</span><i id="ruler-line"></i></div>
+    <div class="scale-note">Dra for å dreie · høgd ×10 · sonde forstørra</div>
+    <button type="button" id="detail" aria-pressed="false">Nærbilete</button>
+    <button type="button" class="reset" id="reset" aria-label="Still tilbake visingsvinkelen" title="Still tilbake visingsvinkelen">↺</button>
+  </div>
+  <div class="result-row" aria-label="Loddrett avstand frå sonden til grensa">
+    <div><span>Modellen anslår</span><strong id="estimate">…</strong><small id="interval"></small></div>
+    <div><span>Fasit i modellbrønnen</span><strong id="truth">…</strong><small>Loddrett frå sendaren</small></div>
+    <label class="frequency"><span>Frekvens</span><select id="frequency" aria-label="Frekvensar i inversjonen"><option value="both">Begge</option><option value="400">400 kHz</option><option value="2000">2 MHz</option></select></label>
+  </div>
+  <div class="transport">
+    <button id="play" type="button" aria-label="Spel av borebana" title="Spel av borebana">▶</button>
+    <div class="rail"><label for="station"><b id="position">Stasjon 53 / 113</b><span id="md"></span></label><input type="range" min="1" max="113" step="1" value="53" id="station" aria-label="Stasjon langs borebana"></div>
+  </div>
+</section>
+<section id="field" hidden aria-label="Blindtest på Z-26">
+  <div class="field-heading"><div><span class="label">Z-26 · 18 274 fot langs brønnen</span><h2>Kva målte 32″-kanalen?</h2></div><span class="unit">2 MHz · fase</span></div>
+  <div class="field-chart"><svg id="plot" role="img" aria-label="Tilsynelatande resistivitet på kanalane ved 16, 32 og 48 tommar"></svg></div>
+  <div id="field-legend"><span><i class="dot"></i> Feltmåling</span><span><i class="diamond"></i> Fysikkmodell</span><span><i class="ring"></i> Nabokanalar</span></div>
+  <div class="field-controls"><div class="choice-title" id="prompt">Kva anslag trur du ligg nærast?</div>
+   <div id="choices"><button type="button" data-pick="physics">Fysikkmodellen <b>6,70</b></button><button type="button" data-pick="neighbour">Nabokanalane <b>6,36</b></button></div>
+   <div id="answer" hidden><p id="answer-text" role="status"></p><button type="button" id="again">Prøv igjen</button></div>
+  </div>
+</section>
+<dialog id="notes"><div class="notes-title"><h2>Om utrekninga</h2><button id="close" type="button" aria-label="Lukk">×</button></div><div id="method-copy"></div></dialog>
+</main>
+<script defer src="../bridge.js"></script></body></html>

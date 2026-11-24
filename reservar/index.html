@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reserve Growth · volum og felthistorikk</title>
+<link rel="stylesheet" href="scene.css">
+<script defer src="feltdata.js"></script>
+<script defer src="reservar.js"></script>
+</head>
+<body>
+<main>
+<header class="modebar">
+ <div class="tabs" role="tablist" aria-label="Vel reserveeksperiment">
+  <button id="model-tab" type="button" role="tab" aria-selected="true" aria-controls="model">Volummodell</button>
+  <button id="field-tab" type="button" role="tab" aria-selected="false" aria-controls="field">Britiske felt</button>
+ </div>
+ <button class="source-button" id="open-method" type="button" aria-haspopup="dialog" aria-label="Opne metode og kjelder" title="Metode og kjelder"><span aria-hidden="true">i</span><span class="method-title">Metode</span></button>
+</header>
+<section id="model" role="tabpanel" aria-labelledby="model-tab">
+ <div id="model-stage" class="stage">
+  <canvas id="block" tabindex="0" role="img" aria-label="Roterbar modell av eit tenkt reservoar. Det gule laget viser reservoartjukkleiken. Bruk piltastane for å dreie modellen."></canvas>
+  <div class="hud model-hud"><div class="caption">Utvinneleg olje</div><div class="reading"><b id="volume">68,7</b><span>mill. fat</span></div><div class="oil-stock"><span id="in-place">Av 196,2 mill. fat på plass</span><i><em id="share-fill"></em></i></div></div>
+  <div class="stage-note" id="geometry-note">Tenkt reservoar · overdriven høgd</div>
+  <button id="rotate" class="tool" type="button" title="Drei modellen" aria-label="Drei modellen 30 grader"><span aria-hidden="true">⟳</span> Drei</button>
+ </div>
+ <div class="controls" aria-label="Endre det tenkte reservoaret">
+  <label class="slider" title="Høgda på det oljeførande reservoarlaget"><span>Tjukkleik <output id="thick-out" for="thickness">20 m</output></span><input id="thickness" type="range" min="15" max="25" value="20" step="0.5"></label>
+  <label class="slider" title="Kor stor del av bergarten som er porerom"><span>Porøsitet <output id="poro-out" for="porosity">20 %</output></span><input id="porosity" type="range" min="16" max="24" value="20" step="0.5"></label>
+  <label class="slider" title="Delen av olja på plass som kan hentast opp"><span>Utvinningsgrad <output id="recovery-out" for="recovery">35 %</output></span><input id="recovery" type="range" min="25" max="45" value="35" step="1"></label>
+ </div>
+</section>
+<section id="field" role="tabpanel" aria-labelledby="field-tab" hidden>
+ <div class="stage field-stage">
+  <div class="field-head">
+   <label class="field-picker"><span class="caption">Oljefelt</span><select id="field-name" aria-label="Vel eitt av 35 britiske oljefelt"><option>Tartan</option></select></label>
+   <div class="field-value"><span class="caption" id="produced-caption">Produsert til 2020</span><div class="reading"><b id="produced">116,4</b><span id="field-unit">mill. fat</span></div></div>
+  </div>
+  <svg id="curve" role="img" aria-label="Kumulativ oljeproduksjon samanlikna med historisk anslag"></svg>
+  <div class="chart-legend"><span><i class="dash"></i>Tidleg anslag <b id="estimate">202</b></span><span><i class="line"></i>Produsert til valt år</span><button id="try-estimate" type="button" class="guess-button" aria-haspopup="dialog" title="Prøv eit eige anslag"><i aria-hidden="true"></i><span id="guess-key">Eige anslag</span></button></div>
+ </div>
+ <div class="archive-controls">
+  <button class="play" id="play" type="button" aria-label="Spel produksjonen frå første år" title="Spel produksjonen frå første år"><span aria-hidden="true">▶</span></button>
+  <label class="slider year"><span>Produksjonsår <output id="year-out" for="year">2020</output></span><input type="range" id="year" aria-label="Produksjonsår"></label>
+  <div class="difference"><b id="delta">−42,4 %</b><span id="delta-note">mot tidleg anslag</span></div>
+ </div>
+</section>
+<dialog id="guess" aria-labelledby="guess-title">
+ <div class="dialog-title"><strong id="guess-title">Kor mykje olje kjem opp?</strong><button id="close-guess" type="button" class="source-button" aria-label="Lukk eige anslag">✕</button></div>
+ <p id="guess-prompt"></p>
+ <label class="slider guess-slider"><span>Ditt anslag <output id="guess-out" for="guess-slider"></output></span><input id="guess-slider" type="range" min="25" max="200" step="1" value="100"></label>
+ <div class="guess-actions"><button type="button" class="source-button" id="reset-guess" hidden>Fjern eige anslag</button><button type="button" id="apply-guess">Vis utfallet</button></div>
+</dialog>
+<dialog id="method" aria-label="Metode og kjelder">
+ <div class="dialog-title"><strong>Metode og kjelder</strong><button type="button" id="close-method" class="source-button" aria-label="Lukk metode og kjelder">✕</button></div>
+ <div id="model-method">
+  <p>Volummodellen reknar ut kor mykje olje som kan hentast opp frå eit tenkt felt. Porøsiteten seier kor stor del av bergarten som er porerom. Oljemetninga seier kor stor del av porerommet som er fylt med olje. Utvinningsgraden avgjer kor stor del av denne olja vi får opp.</p>
+  <div class="formula">Areal × tjukkleik × nettoandel × porøsitet × oljemetning × utvinningsgrad ÷ volumfaktor</div>
+  <p>Fast areal 20 km², nettoandel 65 %, oljemetning 75 % og volumfaktor 1,25 reservoar-m³ per standard-m³. Éin standardkubikkmeter olje svarar til 6,2898 fat. Fargen viser reservoarlaget. Alle verdiane er valde for eit tenkt reservoar. Kvar kombinasjon gir eitt mogleg utfall.</p>
+ </div>
+ <div id="field-method" hidden>
+  <p>Kurva summerer rapportert oljeproduksjon frå britiske NSTA fram til og med valt år. Den stipla linja er det tidlege anslaget for kor mykje olje som kunne hentast opp i heile levetida til feltet.</p>
+  <p id="field-source"></p>
+  <p>Utvalet omfattar 35 avslutta britiske oljefelt med ei dekkjande produksjonsrekkje og eit tidleg anslag. 26 anslag kjem frå Watkins og ni frå DTI Brown Book. Samanlikninga brukar opphavleg eining for kvart felt. I uttrekket er 2026 berre med til og med august.</p>
+  <p class="source-links"><a id="watkins-link" href="https://ceepr.mit.edu/wp-content/uploads/2023/02/2000-008.pdf#page=93" target="_blank" rel="noopener">Watkins (2000), tabell D-1</a><a href="https://services-eu1.arcgis.com/OZMfUznmLTnWccBc/arcgis/rest/services/UKCS_hydrocarbon_field_production_reports_PPRS_points_(WGS84)/FeatureServer/0" target="_blank" rel="noopener">North Sea Transition Authority, PPRS</a><a id="brownbook-link" href="https://web.archive.org/web/20030430104345/http://www.dbd-data.co.uk/bb1998/index.htm" target="_blank" rel="noopener">DTI Brown Book, arkiverte utgåver</a></p>
+ </div>
+</dialog>
+</main>
+<script defer src="../bridge.js"></script></body>
+</html>
