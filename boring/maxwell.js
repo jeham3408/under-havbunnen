@@ -68,10 +68,11 @@
       for(const off of [-2,0,2]){const ring=document.createElementNS(ns,'ellipse');for(const [name,val] of Object.entries({cx:cx+off,cy,rx:1.15,ry,fill:'none',stroke:colour,'stroke-width':1.3}))ring.setAttribute(name,val);g.append(ring);}
       return [cx,cy];};
     for(const [r,name,colour,id] of [[far,'Far receiver',teal,'em-coil-far'],[near,'Near receiver',teal,'em-coil-near'],[0,'Transmitter',gold,'em-coil-tx']]){
-      const [cx,cy]=coil(r,colour,id),belowCoil=r===near,labelY=cy+(belowCoil?(sideBySide?21:11):-(sideBySide?16:8.5));
+      const [cx,cy]=coil(r,colour,id),belowCoil=r===near&&(pair===0||sideBySide),labelY=cy+(belowCoil?(sideBySide?21:11):-(sideBySide?16:8.5));
       if(sideBySide)line(cx,cy+(belowCoil?6:-6),cx,labelY+(belowCoil?-8:2),colour,.8);
       label(cx,labelY,name,colour,sideBySide?10:9,'middle');
     }
+    for(const text of target.querySelectorAll('text')){text.setAttribute('paint-order','stroke');text.setAttribute('stroke','#20332c');text.setAttribute('stroke-width','1.8');text.setAttribute('stroke-linejoin','round');}
     if(sideBySide){label(pad,h+12,'Near '+near+' m · far '+far+' m behind Tx',muted,10);label(pad,h+26,'Depth window ±0.8 m around Tx',muted,10);}
   }
   function layeredPlot(w,h,rows,index,contrast){
