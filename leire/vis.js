@@ -2,17 +2,15 @@
   'use strict';
   const $ = selector => document.querySelector(selector);
   const evidence = window.ClayEvidence;
-  function nf(value,digits=0){
-    const [int,fraction]=Number(value).toFixed(digits).split('.');
-    return int.replace(/\B(?=(\d{3})+(?!\d))/g,' ')+(fraction?','+fraction:'');
-  }
+  const numberFormats=[0,1,2,3].map(digits=>new Intl.NumberFormat('en-GB',{minimumFractionDigits:digits,maximumFractionDigits:digits}));
+  const nf=(value,digits=0)=>numberFormats[digits].format(value);
   const clamp = (n,lo,hi) => Math.min(hi, Math.max(lo,n));
   const sweep = $('#sweep'), play = $('#run'), core = $('#core'), trace = $('#traces');
   const nav = {lab:$('#tab-lab'),field:$('#tab-field')};
   const source = {lab:'https://doi.org/10.1007/s00603-025-04973-z',field:'https://github.com/jeham3408/natures-plug#how-the-screen-works'};
   const notes = {
-    lab:['Rørsla i leirprøva','Utsnitt nær holet i ei prøve av Pierre II-leirbergart. Prøva var 100 mm i diameter og 100 mm høg. Ringspalta var opphavleg 1 mm. Rørsla følgjer den digitaliserte modellkurva i figur 9 hos Liu mfl. Modellen gav kontakt kring forsøksdag 30,5. I forsøket vart kontakt registrert nær ti dagar tidlegare. Tidsskalaen gjeld laboratoriet.','Les laboratoriestudien ↗'],
-    field:['Fram 35/11-7','Den historiske letebrønnen på Fram vart bora i 1992 og er plugga. Kurvene er frå FORCE 2020, med éin verdi per meter i atlaset. Atlaset ser etter gamma over 40 API, resistivitet under 1,3 Ω·m og lydgangtid over 135 µs/ft. Ved standardinnstillingane passerte intervallet 1 120–1 270 m både logg- og trykksjekken. Trykkvurderinga nyttar lekkasjetestar og eit anslag frå slamvekta. Dette er ei etterprøving på arkivdata. I ein brønn må røyrkontakt og evna til å halde trykk undersøkast særskilt.','Sjå data og framgangsmåte ↗']
+    lab:['How the shale moves','The cutaway shows the bore in a Pierre II shale sample, 100 mm in diameter and 100 mm high. The initial radial gap was 1 mm. The motion follows a digitised model curve from Liu et al. (figure 9). The model predicts contact around day 30.5. The experiment detected local contact almost ten days earlier. These times apply to this lab test.','Read the lab study ↗'],
+    field:['Fram 35/11-7','This exploration well on the Fram field was drilled in 1992 and has since been plugged. The atlas uses FORCE 2020 logs sampled every metre. Its default screen looks for gamma ray above 40 API, deep resistivity below 1.3 Ω·m and sonic slowness above 135 µs/ft. The interval at 1,120–1,270 m also passed a pressure screen using leak-off tests and pore pressure estimated from mud weight. Confirming a seal would require evidence of pipe contact and a pressure test in the well.','See the data and method ↗']
   };
   const state = {mode:location.hash==='#fram'?'field':'lab',showLimits:false,day:19,index:165,azimuth:.17,elevation:.42,playing:false,active:true,last:0,frame:0,renderer:null};
   let paint3D = null, drawPending = false;
@@ -29,19 +27,19 @@
     const range=lab?{min:17,max:31,step:.1,value:state.day}:{min:0,max:evidence.log.length-1,step:1,value:state.index};
     for(const [k,v] of Object.entries(range))sweep[k]=v;
     sweep.style.setProperty('--progress',((range.value-range.min)/(range.max-range.min)*100)+'%');
-    sweep.setAttribute('aria-valuetext',lab?'Forsøksdag '+nf(state.day,1):nf(evidence.log[state.index][0],1)+' meter langs brønnen');
-    $('.sr').textContent=lab?'Tid i laboratoriemodellen':'Målepunkt langs Fram-brønnen';
-    $('#axis-label').textContent=lab?'Forsøksdag':'Målt djup';
-    $('#position').textContent=lab?nf(state.day,1)+' døgn':nf(evidence.log[state.index][0],1)+' m';
-    $('#end-label').textContent=lab?'31 døgn':'1 330 m';
-    $('#summary').textContent=lab?'Modellert rørsle i laboratoriet':'Arkivlogg · FORCE 2020';
+    sweep.setAttribute('aria-valuetext',lab?'Experiment day '+nf(state.day,1):nf(evidence.log[state.index][0],1)+' metres measured along the well');
+    $('.sr').textContent=lab?'Time in the laboratory model':'Sample location along the Fram well';
+    $('#axis-label').textContent=lab?'Lab time':'Measured depth';
+    $('#position').textContent=lab?nf(state.day,1)+' days':nf(evidence.log[state.index][0],1)+' m';
+    $('#end-label').textContent=lab?'31 days':'1,330 m';
+    $('#summary').textContent=lab?'Laboratory model':'Archived logs · FORCE 2020';
     if(lab){
       const gap=aperture(state.day);$('#gap').textContent=nf(gap,2);$('#moving-clay').setAttribute('x',22+40*gap);
-      $('#caption').textContent=gap<.001?'Modellen gir kontakt. Laboratoriemålingane viste at væske framleis kunne passere.':'Opphavleg hol Ø10 mm · aluminiumsrøyr Ø8 mm · radial spalte 1 mm.';
+      $('#caption').textContent=gap<.001?'The model reaches the pipe. In the lab, fluid could still pass after contact.':'Initial bore diameter 10 mm · pipe diameter 8 mm · radial gap 1 mm.';
     } else {
       const z=evidence.log[state.index][0]; const inside=z>=1120&&z<=1270;
-      const row=evidence.log[state.index]; trace.setAttribute('aria-label','Ved '+nf(z,1)+' m er gamma '+nf(row[1],1)+' API, djup resistivitet '+nf(row[2],3)+' ohm-meter og lydgangtid '+nf(row[3],1)+' mikrosekund per fot.');
-      $('#caption').textContent=inside?'Innanfor det 150 m lange treffet. Tetteevna til laget er ukjend.':'Utanfor det markerte intervallet 1 120–1 270 m langs brønnen.';
+      const row=evidence.log[state.index]; trace.setAttribute('aria-label','At '+nf(z,1)+' m, gamma ray is '+nf(row[1],1)+' API, deep resistivity is '+nf(row[2],3)+' ohm metres and sonic slowness is '+nf(row[3],1)+' microseconds per foot.');
+      $('#caption').textContent=inside?'Inside the flagged 150 m interval. Its ability to seal remains unknown.':'Outside the flagged interval at 1,120–1,270 m measured depth.';
     }
     if(!$('#notes').hidden)fillNotes();
     scheduleDraw();
@@ -53,10 +51,10 @@
   $('#hold-line').setAttribute('d','M'+holdPath);
   function updateHold(){
     const t=Number(holdTime.value),k=permeability(t),[x,y]=holdPoint(t);
-    $('#hold-day').textContent=nf(t,1)+' døgn';$('#hold-k').textContent=nf(k,1)+' µD';
+    $('#hold-day').textContent=nf(t,1)+' days';$('#hold-k').textContent=nf(k,1)+' µD';
     $('#hold-dot').setAttribute('cx',x);$('#hold-dot').setAttribute('cy',y);
     holdTime.style.setProperty('--progress',(2*t)+'%');
-    holdTime.setAttribute('aria-valuetext',nf(t,1)+' døgn i haldeperioden, '+nf(k,1)+' mikrodarcy');
+    holdTime.setAttribute('aria-valuetext',nf(t,1)+' days into the pressure hold, '+nf(k,1)+' microdarcies');
   }
   holdTime.addEventListener('input',updateHold);updateHold();
   function fillNotes(){$('#hold-study').hidden=state.mode!=='lab';const t=notes[state.mode];$('#note-title').textContent=t[0];$('#note-copy').textContent=t[1];$('#source').textContent=t[2];$('#source').href=source[state.mode];}
@@ -72,7 +70,7 @@
   function stopFrame(){if(state.frame)cancelAnimationFrame(state.frame);state.frame=0;state.last=0;}
   function setPlaying(next) {
     stopFrame();state.playing=next;play.classList.toggle('playing',next);
-    const label=next?'Pause':state.mode==='lab'?'Spel av rørsla':'Følg loggane';play.title=label;play.setAttribute('aria-label',label);
+    const label=next?'Pause':state.mode==='lab'?'Play the lab simulation':'Play through the well logs';play.title=label;play.setAttribute('aria-label',label);
     if(next&&state.active&&!document.hidden)state.frame=requestAnimationFrame(advance);
   }
   let fraction=0;
@@ -102,13 +100,13 @@
   core.addEventListener('pointerup',finish);core.addEventListener('pointercancel',finish);core.addEventListener('lostpointercapture',finish);
   core.addEventListener('keydown',e=>{const a={ArrowLeft:-.17,ArrowRight:.17}[e.key],h={ArrowDown:-.13,ArrowUp:.13}[e.key];if(a!==undefined||h!==undefined){e.preventDefault();e.stopPropagation();setCamera(state.azimuth+(a||0),state.elevation+(h||0));}if(e.key==='Home'){e.preventDefault();setCamera(.17,.42);}});
   function sizeCanvas(el){const r=el.getBoundingClientRect();if(r.width<10||r.height<10)return null;const dpi=Math.min(devicePixelRatio||1,2);const w=Math.round(r.width*dpi),h=Math.round(r.height*dpi);if(el.width!==w||el.height!==h){el.width=w;el.height=h;}const ctx=el.getContext('2d');if(!ctx)return null;ctx.setTransform(dpi,0,0,dpi,0,0);return {ctx,w:r.width,h:r.height};}
-  const tracks=[{name:'Gamma',unit:'API',index:1,min:30,max:110,limit:40,c:'#ebbf82',digits:1},{name:'Resistivitet',unit:'Ω·m',index:2,min:.6,max:1.7,limit:1.3,c:'#8bd8cf',digits:3},{name:'Lydgangtid',unit:'µs/ft',index:3,min:110,max:170,limit:135,c:'#c5c6a3',digits:1}];
+  const tracks=[{name:'Gamma ray',unit:'API',index:1,min:30,max:110,limit:40,c:'#ebbf82',digits:1},{name:'Deep resistivity',unit:'Ω·m',index:2,min:.6,max:1.7,limit:1.3,c:'#8bd8cf',digits:3},{name:'Sonic slowness',unit:'µs/ft',index:3,min:110,max:170,limit:135,c:'#c5c6a3',digits:1}];
   $('#toggle-limits').onclick=()=>{
     state.showLimits=!state.showLimits;
     $('#toggle-limits').setAttribute('aria-pressed',String(state.showLimits));
-    $('#toggle-limits').textContent=state.showLimits?'Skjul logggrenser':'Vis logggrenser';scheduleDraw();
+    $('#toggle-limits').textContent=state.showLimits?'Hide cut-offs':'Show cut-offs';scheduleDraw();
   };
-  const leftMargin=w=>w<450?63:88;
+  const leftMargin=w=>w<450?76:88;
   function drawField() {
     const sized=sizeCanvas(trace);if(!sized)return;
     const {ctx,w,h}=sized, rows=evidence.log, left=leftMargin(w),right=w-25,top=11,bottom=h-24;
@@ -123,7 +121,7 @@
       const Y=v=>lower-clamp((v-t.min)/(t.max-t.min),0,1)*(lower-upper);
       ctx.font=(w<440?'600 9px':'600 11px')+' Arial, sans-serif';ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=t.c;ctx.fillText(t.name,1,base+rowH*.35);
       ctx.font=(w<440?'9px':'11px')+' Arial, sans-serif';ctx.fillStyle='#dce6df';
-      const value=rows[state.index][t.index];ctx.fillText(value==null?'Ukjend':nf(value,t.digits),1,base+rowH*.35+14);
+      const value=rows[state.index][t.index];ctx.fillText(value==null?'No data':nf(value,t.digits),1,base+rowH*.35+14);
       ctx.fillStyle='#b5c9bc';ctx.font='9px Arial,sans-serif';if(rowH>38)ctx.fillText(t.unit,1,base+rowH*.35+26);
       ctx.fillStyle='#abc0b2';ctx.font=(w<450?'8px':'9px')+' Arial,sans-serif';ctx.fillText(nf(t.max,t.index===2?1:0),right+3,upper+5);ctx.fillText(nf(t.min,t.index===2?1:0),right+3,lower);
       if(state.showLimits){
@@ -180,9 +178,9 @@
       ctx.strokeStyle='#c0d5c3aa';ctx.fillStyle='#dce5d7';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(midX,textY);ctx.lineTo(endX,textY);ctx.stroke();ctx.beginPath();ctx.arc(x,y,1.8,0,TAU);ctx.fill();ctx.textAlign=dir===1?'right':'left';const tx=endX+(dir===1?0:1);ctx.fillText(txt,tx,textY-4);
     };
     const tubeAngle=state.azimuth+.72;
-    annotation([4*Math.sin(tubeAngle),-2,4*Math.cos(tubeAngle)],1,'Aluminium');
+    annotation([4*Math.sin(tubeAngle),-2,4*Math.cos(tubeAngle)],1,'Aluminium pipe');
     let theta=state.azimuth-1.35;theta=((theta%TAU)+TAU)%TAU;theta=clamp(theta,slit+.02,TAU-slit-.02);
-    annotation([rockRadius*Math.sin(theta),-.8,rockRadius*Math.cos(theta)],-1,'Leirbergart');
+    annotation([rockRadius*Math.sin(theta),-.8,rockRadius*Math.cos(theta)],-1,'Shale');
   }
   const palette={shale:[112,118,104],bed:[143,148,132],bore:[91,99,87],section:[144,143,122],metal:[165,185,184]};
   function drawFallback(){

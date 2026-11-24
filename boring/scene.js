@@ -5,8 +5,7 @@
   const readings = source.sim.measurements, plane = source.geometry.planeTvdM;
   const scaleM = .027, vex = 10, last = readings.length-1;
   const fileNumber = (n,d=2) => {
-    const [whole,decimal]=n.toFixed(d).split('.');
-    return whole.replace(/\B(?=(\d{3})+(?!\d))/g,' ')+(decimal?','+decimal:'');
+    return n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
   };
   const range = (n,a,b) => Math.min(b,Math.max(a,n));
   const pts = [];
@@ -47,7 +46,7 @@
     labelPos('layer-upper',state.detail?range(at.x-1.2,-spatial.xLim+.38,spatial.xLim-.38):-spatial.xLim*.68,.68,.025);
     labelPos('layer-lower',state.detail?range(at.x+1.15,-spatial.xLim+.38,spatial.xLim-.38):spatial.xLim*.66,-.85,.025);
     const mark=(id,point,dx,dy)=>{
-      const group=$(id),x=point[0],y=point[1],endX=range(x+dx,6,width-56),endY=range(y+dy,17,height-24);
+      const group=$(id),x=point[0],y=point[1],endX=range(x+dx,6,width-80),endY=range(y+dy,17,height-24);
       group.querySelector('path').setAttribute('d','M'+x+' '+y+' L'+endX+' '+endY+' h6');
       const circle=group.querySelector('circle');circle.setAttribute('cx',x);circle.setAttribute('cy',y);
       const label=group.querySelector('text');label.setAttribute('x',endX+9);label.setAttribute('y',endY+3);
@@ -61,7 +60,7 @@
   }
   function redraw(){if(!raf) raf=requestAnimationFrame(draw);}
   function resize(){const r=volume.getBoundingClientRect();width=r.width;height=r.height;redraw();if(state.page==='field')drawPlot();}
-  const pos=(v)=> v===null?'Ukjend':fileNumber(Math.abs(v))+' m '+(v>=0?'under':'over');
+  const pos=(v)=> v===null?'No estimate':fileNumber(Math.abs(v))+' m '+(v>=0?'below':'above');
   function update(){
     const i=state.index, row=readings[i], key=i+'-'+state.mode;
     if(!cache.has(key)){
@@ -70,30 +69,30 @@
     }
     const fit=cache.get(key),truth=plane-row.tvd;
     $('station').value=i+1;$('estimate').textContent=pos(fit.status==='resolved'?fit.median:null);
-    $('estimate').title=fit.status==='resolved'?'90 % modellintervall for signert avstand: '+fileNumber(fit.lo)+' til '+fileNumber(fit.hi)+' m. Positivt tyder under.':'Målingane gav ingen rapportert avstand for denne stasjonen.';
+    $('estimate').title=fit.status==='resolved'?'90% model interval for signed vertical distance: '+fileNumber(fit.lo)+' to '+fileNumber(fit.hi)+' m. Positive values place the boundary below the transmitter.':'The measurements did not resolve a distance at this station.';
     const compactInterval=(lo,hi)=>lo*hi>=0?fileNumber(Math.min(Math.abs(lo),Math.abs(hi)))+'–'+fileNumber(Math.max(Math.abs(lo),Math.abs(hi)))+' m':fileNumber(lo)+'–'+fileNumber(hi)+' m';
-    const reason={homogeneous:'Jamt lag passar målingane',ambiguous_model:'Jamt lag er òg mogleg',misfit:'Dårleg modelltilpassing',uncertain:'For stor uvisse',insufficient:'For få kanalar',missing:'Målingar manglar'};
-    $('interval').textContent=fit.status==='resolved'?'90 %: '+compactInterval(fit.lo,fit.hi):reason[fit.status]||'';
+    const reason={homogeneous:'A uniform layer fits',ambiguous_model:'A uniform layer also fits',misfit:'Poor model fit',uncertain:'High uncertainty',insufficient:'Too few channels',missing:'No readings'};
+    $('interval').textContent=fit.status==='resolved'?'90% interval: '+compactInterval(fit.lo,fit.hi):reason[fit.status]||'';
     $('truth').textContent=pos(truth);
-    $('position').textContent='Stasjon '+(i+1)+' / '+readings.length;
-    $('md').textContent=fileNumber(row.md,0)+' m langs bana';
-    $('station').setAttribute('aria-valuetext', (i+1)+' av '+readings.length+', '+fileNumber(row.md,0)+' meter langs borebana');
+    $('position').textContent='Station '+(i+1)+' / '+readings.length;
+    $('md').textContent=fileNumber(row.md,0)+' m measured depth';
+    $('station').setAttribute('aria-valuetext', (i+1)+' of '+readings.length+', '+fileNumber(row.md,0)+' metres along the well');
     redraw();
   }
   function stop(){
     if(state.playing!==null){clearInterval(state.playing);state.playing=null;}
-    $('play').textContent='▶';$('play').ariaLabel='Spel av borebana';$('play').title='Spel av borebana';
+    $('play').textContent='▶';$('play').ariaLabel='Advance along the well';$('play').title='Advance along the well';
   }
   $('play').addEventListener('click',()=>{
     if(state.playing!==null){stop();return;}
     if(!state.active||document.hidden)return;
     if(state.index===last){state.index=0;update();}
-    $('play').textContent='Ⅱ';$('play').ariaLabel='Pause borebana';$('play').title='Pause borebana';
+    $('play').textContent='Ⅱ';$('play').ariaLabel='Pause playback';$('play').title='Pause playback';
     state.playing=setInterval(()=>{if(!state.active||document.hidden||state.index===last){stop();return;}state.index++;update();},190);
   });
   $('station').addEventListener('input',e=>{stop();state.index=Number(e.target.value)-1;update();});
   $('frequency').addEventListener('change',e=>{state.mode=e.target.value;update();});
-  function setDetail(on){state.detail=on;state.zoom=on?2.40:1;$('detail').setAttribute('aria-pressed',on);$('detail').textContent=on?'Oversikt':'Nærbilete';redraw();}
+  function setDetail(on){state.detail=on;state.zoom=on?2.40:1;$('detail').setAttribute('aria-pressed',on);$('detail').textContent=on?'Overview':'Close-up';redraw();}
   $('detail').onclick=()=>setDetail(!state.detail);
   $('reset').onclick=()=>{Object.assign(state,cameraDefaults);setDetail(false);};
   let pointer=null;
@@ -121,11 +120,11 @@
     const tx=(x1,y1,t,fill,anchor='start',size=12,weight=400)=>svg('text',{x:x1,y:y1,fill,'font-size':size,'font-family':'Arial, sans-serif','text-anchor':anchor,'font-weight':weight},t);
     const line=(x1,y1,x2,y2,col,dash)=>svg('line',{x1,y1,x2,y2,stroke:col,'stroke-width':1.2,...(dash?{'stroke-dasharray':dash}:{})});
     const f=source.field;
-    tx(0,15,'Tilsynelatande resistivitet (Ω·m)','#b3c5bf','start',11);
+    tx(0,15,'Apparent resistivity (Ω·m)','#b3c5bf','start',11);
     for(const v of [6.2,6.4,6.6,6.8]){line(margin.left,y(v),w-margin.right,y(v),'#39504a');tx(margin.left-6,y(v)+3,fileNumber(v,1),'#b3c5bf','end',10);}
     const nodes=[16,32,48];
     nodes.forEach(n=>{line(x(n),margin.top,x(n),h-margin.bottom,'#3f5650',n===32?'3 4':null);tx(x(n),h-22,n+'″','#c3d4cc','middle',12);});
-    tx(w-margin.right,h-3,'Kanal (tommar)','#b3c5bf','end',10);
+    tx(w-margin.right,h-3,'Channel spacing (inches)','#b3c5bf','end',10);
     line(x(16),y(f.short),x(32),y(f.baseline),'#78b3a9','4 4');line(x(32),y(f.baseline),x(48),y(f.far),'#78b3a9','4 4');
     for(const [n,v] of [[16,f.short],[48,f.far]])svg('circle',{cx:x(n),cy:y(v),r:4.6,fill:'#f5f5e5'});
     const cx=x(32),py=y(f.physical),by=y(f.baseline);
@@ -137,13 +136,13 @@
   }
   function fieldAnswer(choice){
     state.answer=choice;$('choices').hidden=Boolean(choice);$('answer').hidden=!choice;$('prompt').hidden=Boolean(choice);
-    if(choice){$('answer-text').textContent='Målt '+fileNumber(source.field.measured)+' Ω·m. Nabokanalane trefte nærast. Avstanden til laggrensa er ukjend.';}
+    if(choice){$('answer-text').textContent='The tool measured '+fileNumber(source.field.measured)+' Ω·m. The neighbour estimate was closer. The distance to the bed boundary remains unknown.';}
     drawPlot();
   }
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>fieldAnswer(b.dataset.pick));$('again').onclick=()=>fieldAnswer(null);
   const method={
-    model:'Denne modellbrønnen går 2° ned mot ei vassrett grense. Det øvste laget har resistivitet 12 Ω·m, det nedste 2 Ω·m. Høgda er overdriven ti gonger i snittet. Sonden og breidda på bergblokka er skjematiske. Dra for å dreie modellen. Piltastane gjer det same når modellen har fokus.\n\nFase og demping ved 400 kHz og 2 MHz kjem frå ei Maxwell-framoverberekning med tilsett støy. Ved kvar stasjon samanliknar nettlesaren opptil fem stasjonar med eit førehandsberekna bibliotek. Berre stasjonar målte så langt går inn. Skift frekvens for å sjå korleis svaret endrar seg. Begge frekvensane saman gav ein rapportert avstand på 39 av 113 stasjonar. På 36 av dei 39 låg fasiten i intervallet mellom 5. og 95. persentil i modellen. Testen bruker same idealiserte lagtype til å lage og tolke signalet.\n\nFasit er loddrett avstand frå sendaren til laggrensa. «Under» og «over» viser kvar grensa er sett frå sonden.',
-    field:'I Ekofisk-brønnen 2/4-Z-26 heldt vi tilbake fire 32-tommarskanalar. Åtte andre kanalar ved same målte djup gjekk inn i fysikktilpassinga. Her viser vi fase ved 2 MHz. Tala er instrumentet sin tilsynelatande resistivitet.\n\nNaboanslaget er det geometriske snittet av dei målte 16″- og 48″-kanalane. Fysikkmodellen gav 6,70 Ω·m, naboanslaget 6,36 og den tilbakehaldne målinga 6,34. Ingen av fire modellgitter kunne rapportere ein avstand her.\n\nKjelde: Dylan Loss og ConocoPhillips, Ekofisk MWD-data, Zenodo 24133398 (NLOD 2.0).'
+    model:"The synthetic well slopes 2° below horizontal towards a flat boundary. The upper layer has a resistivity of 12 Ω·m and the lower layer 2 Ω·m. The cutaway exaggerates height tenfold. The tool is enlarged and the block width is illustrative. Drag or use the arrow keys to rotate the view.\n\nA Maxwell model generates phase and attenuation readings at 400 kHz and 2 MHz. We add noise to these readings. At each station the browser compares the current reading and up to four earlier stations with a library of simulated responses. Switch frequencies to see what each one can resolve.\n\nWith both frequencies, the model reported a distance at 39 of 113 stations. At 36 of those 39, the known distance fell within the model’s 90% interval (5th to 95th percentiles). We used the same idealised layer geometry to generate and interpret the signals.\n\nThe known distance is measured vertically from the transmitter to the boundary. “Below” and “above” describe the boundary relative to the transmitter.",
+    field:"In Ekofisk well 2/4-Z-26, we withheld four 32-inch channels. The physics model used eight other channels at the same measured depth. This example shows the apparent resistivity reported by the 2 MHz phase channel.\n\nThe neighbour estimate is the geometric mean of the measured 16- and 48-inch channels. The physics model gave 6.70 Ω·m, the neighbours gave 6.36 Ω·m and the withheld channel measured 6.34 Ω·m. None of the four model grids resolved the distance to the bed boundary at this station.\n\nData from Dylan Loss and ConocoPhillips, Ekofisk measurement-while-drilling dataset, Zenodo record 24133398 (NLOD 2.0)."
   };
   function page(which,changeHash=false){
     if(which!=='field')which='model';state.page=which;stop();

@@ -1,13 +1,9 @@
 'use strict';
 function initialiseReserve() {
   const $ = id => document.getElementById(id);
-  // Use the Norwegian decimal comma even in offline browsers without a Norwegian locale.
-  function format(value, digits = 1) {
-    const rounded = Math.abs(value).toFixed(digits).split('.');
-    const whole = rounded[0].replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
-    const fraction = (rounded[1] || '').replace(/0+$/, '');
-    return (value < 0 ? '−' : '') + whole + (fraction ? ',' + fraction : '');
-  }
+  const numbers = [0, 1, 2].map(digits => new Intl.NumberFormat('en-GB', {maximumFractionDigits: digits}));
+  const format = (value, digits = 1) => numbers[digits].format(value);
+  const volumeUnit = field => field.unit === 'tonn' ? 'million tonnes' : 'million barrels';
   const clamp = (val, lo, hi) => Math.max(lo, Math.min(hi, val));
   const sliders = {h: $('thickness'), p: $('porosity'), r: $('recovery')};
   const canvas = $('block'), ctx = canvas.getContext('2d');
@@ -57,7 +53,7 @@ function initialiseReserve() {
         bottomEdge=Math.max(bottomEdge,depth-(base+folded)*ce);
       }
     }
-    const topMargin=compact ? Math.min(92,height*.25) : 12;
+    const topMargin=compact ? Math.min(106,height*.29) : 12;
     const usableHeight=Math.max(45,height-topMargin-32);
     const s=Math.min(width*(compact ? .30 : .254),usableHeight/(bottomEdge-topEdge));
     const cx=width*(compact ? .495 : .58);
@@ -154,13 +150,13 @@ function initialiseReserve() {
   function updateModel() {
     const h=Number(sliders.h.value),p=Number(sliders.p.value)/100,r=Number(sliders.r.value)/100;
     const stock=20*h*.65*p*.75/1.25*6.2898;
-    $('thick-out').value=format(h)+' m';$('poro-out').value=format(p*100)+' %';$('recovery-out').value=format(r*100)+' %';
+    $('thick-out').value=format(h)+' m';$('poro-out').value=format(p*100)+'%';$('recovery-out').value=format(r*100)+'%';
     $('volume').textContent=format(stock*r);
-    $('in-place').textContent='Av '+format(stock)+' mill. fat på plass';
+    $('in-place').textContent='Of '+format(stock)+' million barrels in place';
     $('share-fill').style.width=r*100+'%';
-    sliders.h.setAttribute('aria-valuetext',format(h)+' meter');
-    sliders.p.setAttribute('aria-valuetext',format(p*100)+' prosent');
-    sliders.r.setAttribute('aria-valuetext',format(r*100)+' prosent');
+    sliders.h.setAttribute('aria-valuetext',format(h)+' metres');
+    sliders.p.setAttribute('aria-valuetext',format(p*100)+' per cent');
+    sliders.r.setAttribute('aria-valuetext',format(r*100)+' per cent');
     requestRedraw();
   }
   canvas.addEventListener('pointerdown',e=>{
@@ -217,8 +213,8 @@ function initialiseReserve() {
     curve.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     const group = svg('g', {'font-family': 'Arial, sans-serif', 'font-size': small ? 10 : 12});
     curve.replaceChildren(
-      svg('title', {}, field.name + ' · rapportert oljeproduksjon'),
-      svg('desc', {}, 'Den turkise kurva summerer årsproduksjonen. Den stipla okerlinja viser anslaget for heile levetida.'),
+      svg('title', {}, field.name + ' · reported oil production'),
+      svg('desc', {}, 'The turquoise curve shows cumulative oil production. The dashed gold line shows the early estimate of lifetime production.'),
       group
     );
     for (let i = 0; i <= Math.round(yMax / yStep); i++) {
@@ -265,15 +261,15 @@ function initialiseReserve() {
     const volume = cumulative[index], atEnd = index === cumulative.length - 1;
     $('year-out').value = year;
     $('produced').textContent = format(volume, volume < 5 ? 2 : 1);
-    $('produced-caption').textContent = year === 2026 ? 'Produsert til aug. 2026' : 'Produsert til ' + year;
+    $('produced-caption').textContent = year === 2026 ? 'Produced by Aug 2026' : 'Produced by end of ' + year;
     yearSlider.setAttribute('aria-valuetext', String(year));
     const reference = guess ? guess.volume : field.estimate;
     const percentage = (atEnd ? volume / reference - 1 : volume / reference) * 100;
     const sign = atEnd ? percentage < 0 ? '−' : percentage > 0 ? '+' : '' : '';
-    $('delta').textContent = sign + format(Math.abs(percentage)) + ' %';
-    $('delta-note').textContent = (atEnd ? 'mot ' : 'av ') + (guess ? 'ditt anslag' : 'tidleg anslag');
-    $('guess-key').textContent = guess ? 'Ditt ' + format(guess.volume, 2) : 'Eige anslag';
-    $('try-estimate').setAttribute('aria-label', guess ? 'Endre ditt anslag på ' + format(guess.volume, 2) + ' millionar ' + field.unit : 'Prøv eit eige anslag');
+    $('delta').textContent = sign + format(Math.abs(percentage)) + '%';
+    $('delta-note').textContent = (atEnd ? 'vs ' : 'of ') + (guess ? 'your estimate' : 'early estimate');
+    $('guess-key').textContent = guess ? 'Yours ' + format(guess.volume, 2) : 'Your estimate';
+    $('try-estimate').setAttribute('aria-label', guess ? 'Change your estimate of ' + format(guess.volume, 2) + ' ' + volumeUnit(field) : 'Try your own estimate');
     $('try-estimate').classList.toggle('has-guess', Boolean(guess));
     drawChart();
   }
@@ -290,17 +286,17 @@ function initialiseReserve() {
     yearSlider.max = field.start + cumulative.length - 1;
     yearSlider.step = '1';
     yearSlider.value = yearSlider.max;
-    $('field-unit').textContent = 'mill. ' + field.unit;
+    $('field-unit').textContent = volumeUnit(field);
     $('estimate').textContent = format(field.estimate, 2);
-    const original = format(field.estimate, 2) + ' millionar ' + field.unit;
+    const original = format(field.estimate, 2) + ' ' + volumeUnit(field);
     const source = field.source.startsWith('Watkins')
-      ? 'Watkins (2000) oppgir ' + original + ' som anslaget for ' + field.name + ' ved produksjonsstart i ' + field.estimateYear + '.'
-      : 'DTI Brown Book oppgir ' + original + ' som anslaget for ' + field.name + ' ved utgangen av ' + field.estimateYear + '.';
-    const end = Number(yearSlider.max) === 2026 ? 'Uttrekket går til og med august 2026.' : 'Siste år med rapportert oljeproduksjon var ' + yearSlider.max + '.';
+      ? 'Watkins (2000) gives ' + original + ' as the estimate for ' + field.name + ' when production began in ' + field.estimateYear + '.'
+      : 'The DTI Brown Book gives ' + original + ' as the estimate for ' + field.name + ' at the end of ' + field.estimateYear + '.';
+    const end = Number(yearSlider.max) === 2026 ? 'The records run through August 2026.' : 'The last year of reported oil production was ' + yearSlider.max + '.';
     $('field-source').textContent = source + ' ' + end;
     const archive = $('brownbook-link');
     archive.href = field.archiveUrl || 'https://web.archive.org/web/20030430104345/http://www.dbd-data.co.uk/bb1998/index.htm';
-    archive.textContent = field.archiveUrl ? 'DTI Brown Book, feltsida for ' + field.name : 'DTI Brown Book, 1998-utgåva';
+    archive.textContent = field.archiveUrl ? 'DTI Brown Book, field record for ' + field.name : 'DTI Brown Book, 1998 edition';
     $('watkins-link').hash = field.name === 'Tartan' ? 'page=96' : 'page=93';
     updateYear();
   }
@@ -309,13 +305,13 @@ function initialiseReserve() {
     return field.estimate * Number($('guess-slider').value) / 100;
   }
   function updateGuessLabel() {
-    const label = format(proposedVolume(), 2) + ' mill. ' + field.unit;
+    const label = format(proposedVolume(), 2) + ' ' + volumeUnit(field);
     $('guess-out').value = label;
     $('guess-slider').setAttribute('aria-valuetext', label);
   }
   $('try-estimate').addEventListener('click', () => {
     stopPlayback();
-    $('guess-prompt').textContent = 'Det tidlege anslaget for ' + field.name + ' var ' + format(field.estimate, 2) + ' mill. ' + field.unit + '. Kva ville du ha anslått?';
+    $('guess-prompt').textContent = 'The early estimate for ' + field.name + ' was ' + format(field.estimate, 2) + ' ' + volumeUnit(field) + '. What would you have estimated?';
     $('guess-slider').value = guess ? guess.percent : 100;
     $('reset-guess').hidden = !guess;
     updateGuessLabel();
@@ -332,7 +328,7 @@ function initialiseReserve() {
   });
   $('close-guess').addEventListener('click', () => guessDialog.close());
   function playbackLabel() {
-    const label = timer ? 'Set avspelinga på pause' : 'Spel produksjonshistoria';
+    const label = timer ? 'Pause playback' : 'Play the production history';
     $('play').setAttribute('aria-label', label);
     $('play').title = label;
     $('play').firstElementChild.textContent = timer ? 'Ⅱ' : '▶';

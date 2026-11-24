@@ -6,13 +6,13 @@ function decodeLibrary(spec) {
   const fields = new Float32Array(raw.length / 4);
   for (let i = 0; i < fields.length; i++) fields[i] = view.getFloat32(4*i, true);
   if (fields.length !== spec.grid.length * spec.pairs.length * spec.sigma.length) {
-    throw Error("Feil dimensjoner i Maxwell-biblioteket.");
+    throw Error("Invalid Maxwell library dimensions.");
   }
   return {...spec, fields};
 }
 
 function estimateBoundary(lib, window, enabled) {
-  if (window.length === 0 || window.length > 5) throw Error("Bruk 1–5 stasjoner.");
+  if (window.length === 0 || window.length > 5) throw Error("Use one to five stations.");
   const {grid, pairs, sigma, prior, fields} = lib;
   const nD = grid.length, nCh = sigma.length, nP = pairs.length;
   const current = window[window.length - 1], step = grid[1]-grid[0];
@@ -47,7 +47,7 @@ function estimateBoundary(lib, window, enabled) {
       if (chi<minChi) minChi=chi;
     }
   }
-  if (!Number.isFinite(top)) throw Error("Ingen felles dybder i oppslagsområdet.");
+  if (!Number.isFinite(top)) throw Error("The stations share no depths within the lookup range.");
   const depthMass=new Float64Array(nD), pairMass=new Float64Array(nP);
   let homogeneous=0, boundary=0, best=-1, bestHom=-1;
   for (let p=0; p<nP; p++) {

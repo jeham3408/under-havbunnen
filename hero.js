@@ -83,7 +83,7 @@
       const size=w<490?10:12, dx=mid[0]>w*.56?-1:1;
       const ax=mid[0]+dx*(w<490?19:32),ay=mid[1]+(w<490?14:23);
       ctx.font='500 '+size+'px Inter, Arial, sans-serif';
-      const word='Forkasting',tw=ctx.measureText(word).width,px=dx<0?ax-tw-10:ax;
+      const word='Fault',tw=ctx.measureText(word).width,px=dx<0?ax-tw-10:ax;
       ctx.strokeStyle='#f1d397';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...mid);ctx.lineTo(ax,ay);ctx.stroke();
       ctx.fillStyle='#fedda0';ctx.beginPath();ctx.arc(...mid,2.2,0,2*Math.PI);ctx.fill();
       ctx.fillStyle='#13231fe8';ctx.fillRect(px,ay-9,tw+10,size+8);ctx.fillStyle='#fae5bf';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(word,px+5,ay-4+(size+3)/2);ctx.textBaseline='alphabetic';
@@ -91,7 +91,7 @@
   }
   function refresh(){
     time=+slider.value;table.value=time+' ms';table.textContent=table.value;
-    slider.setAttribute('aria-valuetext',time+' millisekund tovegstid');
+    slider.setAttribute('aria-valuetext',time+' milliseconds two-way travel time');
     topTexture=texture(n,n,(u,v)=>amplitude(u,v,time));paint();
   }
   let update=0;slider.addEventListener('input',()=>{cancelAnimationFrame(update);update=requestAnimationFrame(refresh)});
