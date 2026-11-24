@@ -11,3 +11,6 @@ footer{height:62px;flex:none;border-top:1px solid var(--line);display:flex;align
 @media(max-width:365px){main{padding-top:12px;gap:12px}.stage{width:calc(100% + 16px);margin-left:-8px}h1,.cover h1{font-size:39px}#lead{font-size:15px}#detail{font-size:12px}.headtools button{padding-left:2px;padding-right:2px}.headtools{gap:7px}}
 
 #loading{position:absolute;inset:0;display:grid;place-items:center;background:#142322;color:#c8d8cb;letter-spacing:.01em;font-size:14px}
+
+#projectLink{display:inline-block;margin-top:12px;font-weight:560;font-size:12px;text-decoration-color:#638b80}
+@media(max-width:850px){#projectLink{margin-top:7px}}
