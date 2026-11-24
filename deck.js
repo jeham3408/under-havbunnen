@@ -37,11 +37,11 @@
     $('#lead').textContent=scene.l;$('#detail').textContent=scene.d||'';
     $('#signature').replaceChildren();
     const projectLinks={fram:['Sjå brønnkartet og kjeldekoden ↗','https://github.com/jeham3408/natures-plug#natures-plug'],tartan:['Sjå analysen av dei norske felta ↗','https://github.com/jeham3408/reserve-growth#what-we-found']};
-    const project=projectLinks[scene.id],link=$('#projectLink');link.hidden=!project;if(project){link.textContent=project[0];link.href=project[1]}
+    const project=projectLinks[scene.id],link=$('#projectLink');if(link){link.hidden=!project;if(project){link.textContent=project[0];link.href=project[1]}}
     if(scene.by){$('#signature').textContent='Fredric Hegland og Jesper Uhre Hammersvik';const sm=document.createElement('small');sm.textContent='19.–20. november 2026';$('#signature').append(sm)}
-    $('#start').hidden=index!==0;$('#hero').hidden=index!==0;$('#credits').hidden=index!==scenes.length-1;$('#embedded').hidden=!scene.url;$('#loading').hidden=!scene.url;$('#embedded').setAttribute('aria-busy',String(Boolean(scene.url)));
+    $('#start').hidden=index!==0;$('#hero').hidden=index!==0;$('#credits').hidden=index!==scenes.length-1;$('#embedded').hidden=!scene.url;if($('#loading'))$('#loading').hidden=!scene.url;$('#embedded').setAttribute('aria-busy',String(Boolean(scene.url)));
     if(scene.url){
-      const f=document.createElement('iframe');f.title=scene.toc;f.style.visibility='hidden';f.addEventListener('load',()=>{if(f!==document.querySelector('#embedded iframe'))return;f.style.visibility='visible';$('#embedded').setAttribute('aria-busy','false');$('#loading').hidden=true;});f.src=stageURL(scene.url);
+      const f=document.createElement('iframe');f.title=scene.toc;f.style.visibility='hidden';f.addEventListener('load',()=>{if(f!==document.querySelector('#embedded iframe'))return;f.style.visibility='visible';$('#embedded').setAttribute('aria-busy','false');if($('#loading'))$('#loading').hidden=true;});f.src=stageURL(scene.url);
       $('#embedded').append(f);
     }
     $('#footerlabel').textContent=scene.where;$('#number').textContent=(index+1)+' / '+scenes.length;
